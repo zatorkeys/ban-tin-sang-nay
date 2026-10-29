@@ -1,0 +1,78 @@
+name: Bản tin hằng ngày
+
+on:
+  schedule:
+    # 23:15 UTC = 6:15 giờ VN. Crawl + AI mất khoảng 20-30 phút, GitHub cũng hay trễ lịch
+    # 5-20 phút, nên chạy sớm để bản tin lên trước 7:00.
+    - cron: "15 23 * * *"
+  workflow_dispatch:          # nút "Run workflow" để chạy tay
+    inputs:
+      skip_crawl:
+        description: "Bỏ qua crawl, dùng lại dữ liệu đã lưu hôm nay (chỉ chạy lại AI + web)"
+        type: boolean
+        default: false
+      build_only:
+        description: "Chỉ dựng lại trang web (sau khi sửa giao diện)"
+        type: boolean
+        default: false
+  push:                       # sửa giao diện thì dựng lại web, không crawl
+    branches: [main]
+    paths: ["templates/**", "static/**", "build_site.py"]
+
+permissions:
+  contents: write             # commit digests/ và data/ vào repo
+  pages: write
+  id-token: write
+
+concurrency:
+  group: daily-digest
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      TZ: Asia/Ho_Chi_Minh
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Crawl + AI tóm tắt
+        if: github.event_name != 'push' && !inputs.build_only
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python run_daily.py ${{ inputs.skip_crawl && '--from-data' || '' }}
+
+      - name: Lưu bản tin và dữ liệu thô vào repo
+        if: github.event_name != 'push' && !inputs.build_only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add digests data
+          git commit -m "Bản tin $(date +%F)" || echo "Không có gì mới để commit"
+          git pull --rebase
+          git push
+
+      - name: Dựng trang web
+        run: python build_site.py
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

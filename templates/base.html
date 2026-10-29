@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site_name }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ tagline }}{% endblock %}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='20' r='9' fill='%23d9822b'/%3E%3Crect x='3' y='20' width='26' height='3' fill='%231f3a4d'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@600;700&display=swap">
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">{{ site_name }}</a>
+      <nav>
+        <a href="index.html"{% if active == "home" %} aria-current="page"{% endif %}>Hôm nay</a>
+        <a href="luu-tru.html"{% if active == "archive" %} aria-current="page"{% endif %}>Lưu trữ</a>
+        <a href="gioi-thieu.html"{% if active == "about" %} aria-current="page"{% endif %}>Giới thiệu</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Tin chọn từ VnExpress theo số bình luận mỗi giờ. Tóm tắt do AI viết và có thể sai,
+        hãy đọc bài gốc khi cần thông tin chính xác. <a href="gioi-thieu.html">Phương pháp</a></p>
+    </div>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

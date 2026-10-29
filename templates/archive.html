@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Lưu trữ · {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="masthead">
+  <p class="kicker">Lưu trữ</p>
+  <h1>Các bản tin trước</h1>
+  <p class="facts">{{ digests | length }} bản tin</p>
+</section>
+
+{% if not digests %}
+<p>Chưa có bản tin nào.</p>
+{% else %}
+<ul class="archive">
+  {% for d in digests %}
+  <li>
+    <a class="archive-date" href="{{ d.page }}">{{ d.date_label }}</a>
+    <ul class="archive-titles">
+      {% for it in d["items"][:3] %}
+      <li><a href="{{ d.page }}#tin-{{ it.rank }}">{{ it.title }}</a></li>
+      {% endfor %}
+    </ul>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

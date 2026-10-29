@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Giới thiệu · {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="masthead">
+  <p class="kicker">Giới thiệu và phương pháp</p>
+  <h1>{{ site_name }} chọn và tóm tắt tin như thế nào</h1>
+  <p class="facts">{{ tagline }}</p>
+</section>
+
+<article class="prose">
+  <h2>Vì sao có trang này</h2>
+  <p>Người bận rộn không có thời gian lướt hàng trăm bài báo mỗi ngày, nhưng vẫn muốn biết chuyện gì
+    đang diễn ra và mọi người đang bàn tán gì. Mỗi sáng, {{ site_name }} tự chọn 15 tin được độc giả
+    quan tâm nhất trong 24 giờ qua, tóm tắt từng tin và cho biết dư luận đang nghĩ gì.</p>
+
+  <h2>Cách chọn tin</h2>
+  <ol>
+    <li>Thu thập mọi bài đăng trong 24 giờ trước giờ chạy, ở {{ categories | length }} chuyên mục:
+      {{ categories.values() | join(", ") }}.</li>
+    <li>Với mỗi bài, đếm tổng số bình luận (kể cả trả lời) và chia cho số giờ kể từ lúc đăng.
+      Bài mới đăng dưới 2 giờ vẫn tính là 2 giờ, để vài bình luận đầu tiên không đẩy bài lên quá cao.</li>
+    <li>Lấy 15 bài có số <strong>bình luận mỗi giờ</strong> cao nhất. Thứ hạng phản ánh độ sôi nổi
+      của độc giả, không phải ý kiến ban biên tập.</li>
+  </ol>
+
+  <h2>Cách AI tóm tắt</h2>
+  <ul>
+    <li><strong>Chuyện gì xảy ra:</strong> AI đọc tiêu đề, mô tả và khoảng 3.000 ký tự đầu của bài,
+      được yêu cầu chỉ dùng thông tin trong bài, không thêm kiến thức bên ngoài.</li>
+    <li><strong>Dư luận:</strong> AI đọc 20 bình luận nhiều lượt thích nhất của bài và tóm lại các luồng
+      ý kiến chính, ý được đồng tình nhiều và thái độ chung. Không trích nguyên văn, không nêu tên người bình luận.</li>
+    <li><strong>Hôm nay có gì:</strong> AI đọc các tóm tắt trên và viết đoạn tổng quan 3-4 câu.</li>
+  </ul>
+  {% if model %}<p>Mô hình đang dùng: <code>{{ model }}</code>.</p>{% endif %}
+
+  <h2>Hạn chế cần biết</h2>
+  <ul>
+    <li><strong>Thiên về tin gây tranh cãi.</strong> Tin nhiều bình luận thường là tin gây tranh luận
+      hoặc chạm đến cảm xúc, không hẳn là tin quan trọng nhất. Tin chính sách khô khan có thể bị lọt.</li>
+    <li><strong>Dư luận ở đây là độc giả bình luận.</strong> Người bình luận trên báo điện tử không đại diện
+      cho toàn xã hội, và bình luận đã qua kiểm duyệt của tòa soạn.</li>
+    <li><strong>AI có thể sai.</strong> Tóm tắt có thể bỏ sót chi tiết, hiểu nhầm hoặc diễn đạt chưa chuẩn.
+      Khi cần chính xác, hãy đọc bài gốc qua đường dẫn dưới mỗi tin.</li>
+    <li><strong>Một nguồn duy nhất.</strong> Hiện chỉ lấy tin từ VnExpress.</li>
+  </ul>
+
+  <h2>Nguồn dữ liệu và vận hành</h2>
+  <p>Bài báo và bình luận lấy từ trang công khai của VnExpress; bản quyền nội dung thuộc về VnExpress
+    và tác giả. Toàn bộ quy trình chạy tự động mỗi sáng: thu thập, chọn tin, tóm tắt và đăng lên trang,
+    không có người chỉnh sửa. Dữ liệu từng ngày được lưu dưới dạng JSON tại
+    <code>digests/YYYY-MM-DD.json</code>.</p>
+</article>
+{% endblock %}

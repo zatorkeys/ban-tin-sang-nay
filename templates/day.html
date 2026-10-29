@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{% if digest %}{{ site_name }} · {{ digest.date_label }}{% else %}{{ site_name }}{% endif %}{% endblock %}
+{% block description %}{% if digest and digest.overview %}{{ digest.overview | truncate(160) }}{% else %}{{ tagline }}{% endif %}{% endblock %}
+
+{% block content %}
+{% if not digest %}
+  <section class="empty">
+    <h1>Chưa có bản tin nào</h1>
+    <p>Bản tin đầu tiên sẽ xuất hiện sau lần chạy tự động kế tiếp.</p>
+  </section>
+{% else %}
+  <section class="masthead">
+    <p class="kicker">{{ digest.date_label }}</p>
+    <h1>Bản tin {% if active == "home" %}hôm nay{% else %}ngày {{ digest.date[8:] }}/{{ digest.date[5:7] }}{% endif %}</h1>
+    <p class="facts">Cập nhật {{ digest.updated }} · {{ digest["items"] | length }} tin · đọc khoảng {{ digest.read_minutes }} phút</p>
+  </section>
+
+  {% if digest.overview %}
+  <section class="overview" aria-labelledby="overview-title">
+    <h2 id="overview-title">Hôm nay có gì</h2>
+    <p>{{ digest.overview }}</p>
+  </section>
+  {% endif %}
+
+  {% if digest.filters | length > 1 %}
+  <div class="filters" role="toolbar" aria-label="Lọc theo chuyên mục">
+    <button type="button" data-filter="" aria-pressed="true">Tất cả <span>{{ digest["items"] | length }}</span></button>
+    {% for f in digest.filters %}
+    <button type="button" data-filter="{{ f.slug }}" aria-pressed="false">{{ f.name }} <span>{{ f.count }}</span></button>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <ol class="cards">
+    {% for it in digest["items"] %}
+    <li class="card" id="tin-{{ it.rank }}" data-category="{{ it.category }}">
+      <p class="card-meta">
+        <span class="rank">#{{ it.rank }}</span>
+        <span class="cat">{{ it.category_name }}</span>
+        <span>{{ it.comment_count }} bình luận ({{ it.comments_per_hour | num }}/giờ)</span>
+        <span class="muted">đăng {{ it.publish_date | time }}</span>
+      </p>
+      <h3><a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a></h3>
+
+      <p class="label">Chuyện gì xảy ra</p>
+      {% if it.tom_tat %}
+      <p>{{ it.tom_tat }}</p>
+      {% else %}
+      <p>{{ it.description or "Chưa có tóm tắt." }} <em class="muted">(mô tả của bài gốc, AI chưa tóm tắt được)</em></p>
+      {% endif %}
+
+      {% if it.du_luan %}
+      <p class="label">Dư luận</p>
+      <p class="opinion">{{ it.du_luan }}</p>
+      {% endif %}
+
+      <a class="source" href="{{ it.url }}" target="_blank" rel="noopener">Đọc bài gốc trên VnExpress →</a>
+    </li>
+    {% endfor %}
+  </ol>
+  <p class="empty-filter" hidden>Không có tin nào trong chuyên mục này.</p>
+
+  <nav class="day-nav" aria-label="Các ngày khác">
+    {% if older %}<a href="{{ older.page }}">← {{ older.date_label }}</a>{% else %}<span></span>{% endif %}
+    {% if newer %}<a href="{{ newer.page }}">{{ newer.date_label }} →</a>{% endif %}
+  </nav>
+
+  <p class="model-note muted">Tóm tắt bởi {{ digest.model }} lúc {{ digest.generated_at }}.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="static/filter.js" defer></script>
+{% endblock %}
