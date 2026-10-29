@@ -1,10 +1,10 @@
-# Sáng Nay: bản tin buổi sáng do AI đọc báo thay bạn
+# Sáng Nay: bản tin cuối ngày do AI đọc báo thay bạn
 
-Mỗi sáng trước 7h, trang web tự chọn 15 tin VnExpress được độc giả bình luận sôi nổi nhất
+Mỗi tối khoảng 20:20, trang web tự chọn 15 tin VnExpress được độc giả bình luận sôi nổi nhất
 trong 24 giờ qua, tóm tắt từng tin và cho biết dư luận đang nghĩ gì.
 
 ```
-6:15 mỗi sáng (GitHub Actions)
+19:50 mỗi tối (GitHub Actions)
   → crawler.py      RSS + trang bài + API bình luận, chỉ lấy bài trong 24 giờ
   → run_daily.py    lưu dữ liệu thô vào data/articles/YYYY-MM-DD.jsonl.gz (kho cho RAG sau này)
   → ai_summary.py   chọn 15 tin theo bình luận/giờ, Gemini tóm tắt tin + dư luận + tổng quan
@@ -51,7 +51,7 @@ python ai_summary.py articles.csv comments.csv --now "2026-10-29 07:00"
 2. **Settings → Secrets and variables → Actions → New repository secret**:
    `GEMINI_API_KEY` = key tạo ở Google AI Studio.
 3. **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-4. **Actions → Bản tin hằng ngày → Run workflow** để chạy lần đầu. Từ hôm sau sẽ tự chạy lúc 6:15.
+4. **Actions → Bản tin hằng ngày → Run workflow** để chạy lần đầu. Từ đó sẽ tự chạy lúc 19:50 mỗi tối.
 
 Trang web sẽ ở `https://<tên-tài-khoản>.github.io/<tên-repo>/`.
 
@@ -60,7 +60,8 @@ Sửa `templates/`, `static/` rồi push thì web tự dựng lại, không craw
 
 ## Ghi chú
 
-- **Giờ chạy**: lịch GitHub thường trễ 5-20 phút, có hôm hơn. Workflow đặt 6:15 để kịp 7:00.
+- **Giờ chạy**: lịch GitHub thường trễ 5-20 phút, có hôm hơn. Workflow đặt 19:50 để bản tin lên
+  khoảng 20:20. Đổi giờ: sửa dòng `cron` trong `.github/workflows/daily.yml` (giờ UTC = giờ VN - 7).
 - **Dung lượng**: dữ liệu thô khoảng vài trăm KB/ngày (nén gzip), commit thẳng vào repo dùng được
   vài năm. Khi lớn dần có thể chuyển sang Hugging Face Datasets hoặc Releases.
 - **Lỗi**: nếu crawl không được bài nào hoặc thiếu API key, workflow báo lỗi (GitHub gửi email)

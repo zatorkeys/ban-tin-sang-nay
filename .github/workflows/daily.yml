@@ -2,9 +2,9 @@ name: Bản tin hằng ngày
 
 on:
   schedule:
-    # 23:15 UTC = 6:15 giờ VN. Crawl + AI mất khoảng 20-30 phút, GitHub cũng hay trễ lịch
-    # 5-20 phút, nên chạy sớm để bản tin lên trước 7:00.
-    - cron: "15 23 * * *"
+    # 12:50 UTC = 19:50 giờ VN. Crawl + AI mất khoảng 20 phút, GitHub cũng hay trễ lịch
+    # 5-20 phút, nên chạy sớm để bản tin lên khoảng 20:20.
+    - cron: "50 12 * * *"
   workflow_dispatch:          # nút "Run workflow" để chạy tay
     inputs:
       skip_crawl:
