@@ -1,5 +1,31 @@
 {% extends "base.html" %}
 
+{% macro card(it, anchor, what_label, opinion_label) %}
+    <li class="card" id="{{ anchor }}-{{ it.rank }}" data-category="{{ it.category }}">
+      <p class="card-meta">
+        <span class="rank">#{{ it.rank }}</span>
+        <span class="cat">{{ it.category_name }}</span>
+        <span>{{ it.comment_count }} bình luận ({{ it.comments_per_hour | num }}/giờ)</span>
+        <span class="muted">đăng {{ it.publish_date | time }}</span>
+      </p>
+      <h3><a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a></h3>
+
+      <p class="label">{{ what_label }}</p>
+      {% if it.tom_tat %}
+      <p>{{ it.tom_tat }}</p>
+      {% else %}
+      <p>{{ it.description or "Chưa có tóm tắt." }} <em class="muted">(mô tả của bài gốc, AI chưa tóm tắt được)</em></p>
+      {% endif %}
+
+      {% if it.du_luan %}
+      <p class="label">{{ opinion_label }}</p>
+      <p class="opinion">{{ it.du_luan }}</p>
+      {% endif %}
+
+      <a class="source" href="{{ it.url }}" target="_blank" rel="noopener">Đọc bài gốc trên VnExpress →</a>
+    </li>
+{% endmacro %}
+
 {% block title %}{% if digest %}{{ site_name }} · {{ digest.date_label }}{% else %}{{ site_name }}{% endif %}{% endblock %}
 {% block description %}{% if digest and digest.overview %}{{ digest.overview | truncate(160) }}{% else %}{{ tagline }}{% endif %}{% endblock %}
 
@@ -32,34 +58,24 @@
   </div>
   {% endif %}
 
-  <ol class="cards">
+  <ol class="cards" id="tin-chinh">
     {% for it in digest["items"] %}
-    <li class="card" id="tin-{{ it.rank }}" data-category="{{ it.category }}">
-      <p class="card-meta">
-        <span class="rank">#{{ it.rank }}</span>
-        <span class="cat">{{ it.category_name }}</span>
-        <span>{{ it.comment_count }} bình luận ({{ it.comments_per_hour | num }}/giờ)</span>
-        <span class="muted">đăng {{ it.publish_date | time }}</span>
-      </p>
-      <h3><a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a></h3>
-
-      <p class="label">Chuyện gì xảy ra</p>
-      {% if it.tom_tat %}
-      <p>{{ it.tom_tat }}</p>
-      {% else %}
-      <p>{{ it.description or "Chưa có tóm tắt." }} <em class="muted">(mô tả của bài gốc, AI chưa tóm tắt được)</em></p>
-      {% endif %}
-
-      {% if it.du_luan %}
-      <p class="label">Dư luận</p>
-      <p class="opinion">{{ it.du_luan }}</p>
-      {% endif %}
-
-      <a class="source" href="{{ it.url }}" target="_blank" rel="noopener">Đọc bài gốc trên VnExpress →</a>
-    </li>
+    {{ card(it, "tin", "Chuyện gì xảy ra", "Dư luận") }}
     {% endfor %}
   </ol>
   <p class="empty-filter" hidden>Không có tin nào trong chuyên mục này.</p>
+
+  {% if digest.tam_su %}
+  <section class="tam-su" aria-labelledby="tam-su-title">
+    <h2 id="tam-su-title">Tâm sự được bàn tán nhiều nhất</h2>
+    <p class="section-note">Thư độc giả gửi chuyên mục Tâm sự, không tính vào {{ digest["items"] | length }} tin ở trên.</p>
+    <ol class="cards">
+      {% for it in digest.tam_su %}
+      {{ card(it, "tam-su", "Câu chuyện", "Độc giả khuyên gì") }}
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
 
   <nav class="day-nav" aria-label="Các ngày khác">
     {% if older %}<a href="{{ older.page }}">← {{ older.date_label }}</a>{% else %}<span></span>{% endif %}

@@ -37,13 +37,18 @@ MAX_COMMENTS = 20          # số bình luận nhiều thích nhất đưa vào 
 MAX_COMMENT_CHARS = 300
 MIN_HOURS = 2              # bài mới đăng < 2 giờ vẫn chia cho 2, tránh điểm ảo (3 bình luận / 0.1 giờ)
 RETRIES = 5
+TAM_SU = "tam-su"          # thư độc giả: khung riêng cuối trang, không tính vào TOP_N
+TAM_SU_N = 2
 
 
 # ----------------------------------------------------------------------------
 # 1. Chọn bài
 # ----------------------------------------------------------------------------
-def pick_top(articles_df, now=None, top_n=TOP_N):
-    """Chọn top_n bài trong 24 giờ trước `now` theo số bình luận mỗi giờ."""
+def pick_top(articles_df, now=None, top_n=TOP_N, only=None, exclude=None):
+    """Chọn top_n bài trong 24 giờ trước `now` theo số bình luận mỗi giờ.
+
+    only / exclude: chỉ lấy / bỏ qua một chuyên mục (slug), dùng để tách Tâm sự.
+    """
     now = now or datetime.now(VN_TZ).replace(tzinfo=None)
     df = articles_df.copy()
     df["ArticleID"] = df["ArticleID"].astype(str)
@@ -52,6 +57,11 @@ def pick_top(articles_df, now=None, top_n=TOP_N):
 
     df = df[(df["PublishDate"] >= now - timedelta(hours=24)) & (df["PublishDate"] <= now)]
     df = df[df["CommentCount"] > 0].drop_duplicates("ArticleID")
+    if "Category" in df:
+        if only:
+            df = df[df["Category"] == only]
+        if exclude:
+            df = df[df["Category"] != exclude]
 
     hours = (now - df["PublishDate"]).dt.total_seconds() / 3600
     df["CommentsPerHour"] = df["CommentCount"] / hours.clip(lower=MIN_HOURS)
@@ -117,6 +127,9 @@ ARTICLE_SYSTEM_PROMPT = """Bạn là biên tập viên viết bản tin buổi s
   ý kiến chính, ý nào được đồng tình nhiều nhất, có ý kiến trái chiều không, thái độ chung
   (đồng tình, phản đối, lo lắng, bức xúc...). Không trích nguyên văn, không nêu tên người
   bình luận. Ít bình luận thì viết ngắn hơn; không có bình luận thì ghi "Chưa có bình luận đáng chú ý."
+
+Riêng bài chuyên mục tam-su (thư độc giả kể chuyện riêng): tom_tat kể lại hoàn cảnh và điều người
+viết đang băn khoăn; du_luan nêu các lời khuyên chính độc giả đưa ra và ý nào được đồng tình nhiều nhất.
 
 Mỗi bài xử lý độc lập, không trộn thông tin giữa các bài. Văn phong trung lập, rõ ràng như báo chí.
 Trả về đúng một mục cho mỗi ID."""
@@ -208,17 +221,9 @@ def summarize_day(items):
 # ----------------------------------------------------------------------------
 # 5. Ghép bản tin và lưu JSON
 # ----------------------------------------------------------------------------
-def build_digest(articles_df, comment_df, now=None, top_n=TOP_N, out_dir="digests"):
-    now = now or datetime.now(VN_TZ).replace(tzinfo=None)
-    top = pick_top(articles_df, now=now, top_n=top_n)
-    print(f"Chọn được {len(top)} bài trong 24 giờ trước {now:%Y-%m-%d %H:%M}")
-    if top.empty:
-        return None
-
-    summaries = summarize_articles(top, comment_df)
-
+def _to_items(df, summaries):
     items = []
-    for rank, r in enumerate(top.itertuples(), 1):
+    for rank, r in enumerate(df.itertuples(), 1):
         s = summaries.get(r.ArticleID, {})
         items.append({
             "rank": rank,
@@ -233,13 +238,27 @@ def build_digest(articles_df, comment_df, now=None, top_n=TOP_N, out_dir="digest
             "tom_tat": s.get("tom_tat"),
             "du_luan": s.get("du_luan"),
         })
+    return items
+
+
+def build_digest(articles_df, comment_df, now=None, top_n=TOP_N, out_dir="digests"):
+    now = now or datetime.now(VN_TZ).replace(tzinfo=None)
+    top = pick_top(articles_df, now=now, top_n=top_n, exclude=TAM_SU)
+    tam_su = pick_top(articles_df, now=now, top_n=TAM_SU_N, only=TAM_SU)
+    print(f"Chọn được {len(top)} bài + {len(tam_su)} bài Tâm sự trong 24 giờ trước {now:%Y-%m-%d %H:%M}")
+    if top.empty:
+        return None
+
+    summaries = summarize_articles(pd.concat([top, tam_su]), comment_df)
+    items = _to_items(top, summaries)
 
     digest = {
         "date": now.strftime("%Y-%m-%d"),
         "generated_at": now.strftime("%Y-%m-%d %H:%M"),
         "model": MODEL,
-        "overview": summarize_day(items),
+        "overview": summarize_day(items),      # tổng quan chỉ dựa trên tin chính
         "items": items,
+        "tam_su": _to_items(tam_su, summaries),
     }
 
     os.makedirs(out_dir, exist_ok=True)

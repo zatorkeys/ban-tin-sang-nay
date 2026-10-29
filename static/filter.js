@@ -3,7 +3,7 @@
 (function () {
   var buttons = document.querySelectorAll(".filters button");
   if (!buttons.length) return;
-  var cards = document.querySelectorAll(".card");
+  var cards = document.querySelectorAll("#tin-chinh .card");   // khung Tâm sự luôn hiện
   var emptyNote = document.querySelector(".empty-filter");
 
   function apply(slug) {

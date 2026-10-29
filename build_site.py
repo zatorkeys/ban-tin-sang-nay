@@ -49,15 +49,18 @@ def prepare(digest):
     """Thêm các trường chỉ dùng để hiển thị."""
     texts = [digest.get("overview") or ""]
     counts = {}
-    for it in digest["items"]:
+    digest.setdefault("tam_su", [])          # bản tin cũ chưa có Tâm sự
+    for it in digest["items"] + digest["tam_su"]:
         it["category_name"] = CATEGORIES.get(it.get("category"), it.get("category") or "Khác")
         texts += [it["title"], it.get("tom_tat") or it.get("description") or "", it.get("du_luan") or ""]
+    for it in digest["items"]:               # nút lọc chỉ cho 15 tin chính
         counts[it.get("category")] = counts.get(it.get("category"), 0) + 1
 
     words = sum(len(t.split()) for t in texts)
     digest["read_minutes"] = max(1, math.ceil(words / WORDS_PER_MINUTE))
     digest["date_label"] = date_label(digest["date"])
-    digest["updated"] = digest["generated_at"][-5:].lstrip("0")
+    generated = datetime.strptime(digest["generated_at"], "%Y-%m-%d %H:%M")
+    digest["updated"] = f"{generated.hour}:{generated:%M}"     # 07:05 -> 7:05, 00:25 -> 0:25
     digest["page"] = f"{digest['date']}.html"
     # nút lọc: theo thứ tự chuyên mục quen thuộc, chỉ những chuyên mục có tin
     order = list(CATEGORIES)

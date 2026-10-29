@@ -41,6 +41,7 @@ CATEGORIES = {
     "the-thao": "Thể thao",
     "giai-tri": "Giải trí",
     "du-lich": "Du lịch",
+    "tam-su": "Tâm sự",          # khung riêng cuối trang, xem ai_summary.TAM_SU
 }
 
 HEADERS = {

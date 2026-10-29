@@ -7,7 +7,7 @@ trong 24 giờ qua, tóm tắt từng tin và cho biết dư luận đang nghĩ 
 20:00 mỗi tối (GitHub Actions)
   → crawler.py      RSS + trang bài + API bình luận, chỉ lấy bài trong 24 giờ
   → run_daily.py    lưu dữ liệu thô vào data/articles/YYYY-MM-DD.jsonl.gz (kho cho RAG sau này)
-  → ai_summary.py   chọn 15 tin theo bình luận/giờ, Gemini tóm tắt tin + dư luận + tổng quan
+  → ai_summary.py   chọn 15 tin + 2 bài Tâm sự theo bình luận/giờ, Gemini tóm tắt tin + dư luận + tổng quan
                     → digests/YYYY-MM-DD.json
   → build_site.py   Jinja2 sinh HTML tĩnh vào site/
   → GitHub Pages
@@ -17,8 +17,8 @@ trong 24 giờ qua, tóm tắt từng tin và cho biết dư luận đang nghĩ 
 
 | File | Việc |
 |---|---|
-| `crawler.py` | Thu thập bài 24 giờ qua của 12 chuyên mục (danh sách trong `CATEGORIES`). Đọc RSS trước (có sẵn giờ đăng, khỏi tải bài cũ); chuyên mục nào RSS không phủ đủ 24 giờ thì xem thêm trang danh sách. |
-| `ai_summary.py` | Chọn tin, gọi Gemini, ghi `digests/<ngày>.json`. |
+| `crawler.py` | Thu thập bài 24 giờ qua của 13 chuyên mục (danh sách trong `CATEGORIES`). Đọc RSS trước (có sẵn giờ đăng, khỏi tải bài cũ); chuyên mục nào RSS không phủ đủ 24 giờ thì xem thêm trang danh sách. |
+| `ai_summary.py` | Chọn tin, gọi Gemini, ghi `digests/<ngày>.json`. Tâm sự (`TAM_SU`, `TAM_SU_N`) tách thành khung riêng, không tính vào 15 tin. |
 | `run_daily.py` | Chạy cả chuỗi, lưu dữ liệu thô. |
 | `build_site.py` + `templates/` + `static/` | Trang chủ, từng ngày, lưu trữ, giới thiệu. |
 | `.github/workflows/daily.yml` | Lịch chạy hằng ngày + đăng lên GitHub Pages. |
