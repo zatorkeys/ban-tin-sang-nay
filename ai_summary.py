@@ -106,7 +106,7 @@ class ArticleDigest(BaseModel):      # khuôn JSON bắt model trả về
     du_luan: str
 
 
-ARTICLE_SYSTEM_PROMPT = """Bạn là biên tập viên viết bản tin cuối ngày cho người bận rộn.
+ARTICLE_SYSTEM_PROMPT = """Bạn là biên tập viên viết bản tin buổi sáng cho người bận rộn.
 Đầu vào gồm nhiều bài báo, mỗi bài bắt đầu bằng '### ID'. Với TỪNG bài, viết:
 
 - tom_tat: 3-4 câu, đọc xong không cần mở bài gốc vẫn nắm đủ ý chính: chuyện gì xảy ra,
@@ -190,7 +190,7 @@ def summarize_articles(top_df, comment_df):
 # ----------------------------------------------------------------------------
 # 4. Tổng quan trong ngày
 # ----------------------------------------------------------------------------
-DAY_SYSTEM_PROMPT = """Bạn viết đoạn mở đầu cho bản tin cuối ngày.
+DAY_SYSTEM_PROMPT = """Bạn viết đoạn mở đầu cho bản tin buổi sáng.
 Dựa CHỈ trên các tóm tắt được cung cấp, viết 3-4 câu tiếng Việt nêu những điểm đáng chú ý nhất
 hôm nay và dư luận đang quan tâm điều gì. Không liệt kê từng tin, không thêm thông tin bên ngoài.
 Chỉ trả về đoạn văn."""
