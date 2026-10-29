@@ -17,7 +17,7 @@ trong 24 giờ qua, tóm tắt từng tin và cho biết dư luận đang nghĩ 
 
 | File | Việc |
 |---|---|
-| `crawler.py` | Thu thập bài 24 giờ qua của 11 chuyên mục. Đọc RSS trước (có sẵn giờ đăng, khỏi tải bài cũ); chuyên mục nào RSS không phủ đủ 24 giờ thì xem thêm trang danh sách. |
+| `crawler.py` | Thu thập bài 24 giờ qua của 12 chuyên mục (danh sách trong `CATEGORIES`). Đọc RSS trước (có sẵn giờ đăng, khỏi tải bài cũ); chuyên mục nào RSS không phủ đủ 24 giờ thì xem thêm trang danh sách. |
 | `ai_summary.py` | Chọn tin, gọi Gemini, ghi `digests/<ngày>.json`. |
 | `run_daily.py` | Chạy cả chuỗi, lưu dữ liệu thô. |
 | `build_site.py` + `templates/` + `static/` | Trang chủ, từng ngày, lưu trữ, giới thiệu. |
