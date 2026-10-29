@@ -35,6 +35,7 @@ CATEGORIES = {
     "phap-luat": "Pháp luật",
     "giao-duc": "Giáo dục",
     "suc-khoe": "Sức khỏe",
+    "doi-song": "Đời sống",
     "bat-dong-san": "Bất động sản",
     "khoa-hoc-cong-nghe": "Khoa học công nghệ",
     "the-thao": "Thể thao",
