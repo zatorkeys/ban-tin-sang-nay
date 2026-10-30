@@ -3,8 +3,9 @@
 (function () {
   var buttons = document.querySelectorAll(".filters button");
   if (!buttons.length) return;
-  var cards = document.querySelectorAll("#tin-chinh .card");   // khung Tâm sự luôn hiện
+  var cards = document.querySelectorAll("#tin-chinh .card");
   var emptyNote = document.querySelector(".empty-filter");
+  var tamSu = document.querySelector(".tam-su");   // chỉ hiện ở "Tất cả" và tab Tâm sự
 
   function apply(slug) {
     var shown = 0;
@@ -16,7 +17,8 @@
       c.hidden = !match;
       if (match) shown++;
     });
-    if (emptyNote) emptyNote.hidden = shown > 0;
+    if (emptyNote) emptyNote.hidden = shown > 0 || slug === "tam-su";
+    if (tamSu) tamSu.hidden = !!slug && slug !== "tam-su";
   }
 
   buttons.forEach(function (b) {

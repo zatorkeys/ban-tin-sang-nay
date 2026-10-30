@@ -49,12 +49,15 @@
   </section>
   {% endif %}
 
-  {% if digest.filters | length > 1 %}
+  {% if digest.filters | length > 1 or digest.tam_su %}
   <div class="filters" role="toolbar" aria-label="Lọc theo chuyên mục">
     <button type="button" data-filter="" aria-pressed="true">Tất cả <span>{{ digest["items"] | length }}</span></button>
     {% for f in digest.filters %}
     <button type="button" data-filter="{{ f.slug }}" aria-pressed="false">{{ f.name }} <span>{{ f.count }}</span></button>
     {% endfor %}
+    {% if digest.tam_su %}
+    <button type="button" data-filter="tam-su" aria-pressed="false">Tâm sự <span>{{ digest.tam_su | length }}</span></button>
+    {% endif %}
   </div>
   {% endif %}
 

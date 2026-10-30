@@ -36,6 +36,10 @@ jobs:
       TZ: Asia/Ho_Chi_Minh
     steps:
       - uses: actions/checkout@v4
+        with:
+          # lấy bản mới nhất của nhánh lúc bắt đầu chạy, không phải lúc bấm/push: lần dựng web
+          # phải xếp hàng chờ bản tin chạy xong vẫn thấy bản tin vừa commit
+          ref: ${{ github.ref }}
 
       - uses: actions/setup-python@v5
         with:
