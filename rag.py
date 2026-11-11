@@ -44,6 +44,7 @@ MAX_DOC_CHARS = 3000        # model embedding chỉ đọc ~2.048 token đầu
 TOP_BODY = 10               # số đoạn nội dung lấy về mỗi câu hỏi
 TOP_COMMENTS = 5            # số document bình luận (nhiều hơn khi hỏi về dư luận)
 MAX_SOURCES = 6             # số bài tối đa đưa vào câu trả lời
+EMPTY_INDEX = f"Chỉ mục trống ({INDEX_DIR}/ chưa có dữ liệu). Chạy `python rag.py index` trước."
 WEEKDAYS = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"]
 
 
@@ -202,13 +203,8 @@ def where_filter(plan, doc_type, use_plan=True):
 # ----------------------------------------------------------------------------
 # 4. Tìm + trả lời
 # ----------------------------------------------------------------------------
-def retrieve(plan, use_plan=True):
+def retrieve(col, plan, vector, use_plan=True):
     """Tìm riêng nội dung bài và bình luận, gom theo bài, giữ thứ tự bài khớp nhất trước."""
-    col = get_collection()
-    vector = embed([plan.search_query], "RETRIEVAL_QUERY")
-    if vector is None:
-        sys.exit("Không gọi được Gemini để embedding câu hỏi")
-
     hits = []
     for doc_type, k in (("body", TOP_BODY), ("comments", TOP_COMMENTS * (2 if plan.wants_opinion else 1))):
         res = col.query(query_embeddings=vector, n_results=k, where=where_filter(plan, doc_type, use_plan),
@@ -235,16 +231,20 @@ ANSWER_SYSTEM_PROMPT = """Bạn trả lời câu hỏi về tin tức dựa trê
 
 
 def ask(question, today=None):
-    """Trả về {"answer", "sources", "plan", "filtered"}."""
+    """Trả về {"answer", "sources", "plan", "filtered"}; RuntimeError nếu chỉ mục trống hoặc Gemini lỗi."""
+    col = get_collection()
+    if col.count() == 0:                # báo ngay, khỏi tốn lượt gọi Gemini
+        raise RuntimeError(EMPTY_INDEX)
     today = today or datetime.now(VN_TZ).replace(tzinfo=None)
     plan = plan_query(question, today)
-    found = retrieve(plan)
+    vector = embed([plan.search_query], "RETRIEVAL_QUERY")
+    if vector is None:
+        raise RuntimeError("Không gọi được Gemini để embedding câu hỏi, thử lại sau.")
+
+    found = retrieve(col, plan, vector)
     filtered = True
     if not found:                       # bộ lọc quá hẹp (vd. hỏi ngày chưa có dữ liệu): bỏ lọc
-        found, filtered = retrieve(plan, use_plan=False), False
-    if not found:
-        return {"answer": "Chỉ mục chưa có dữ liệu. Chạy `python rag.py index` trước.",
-                "sources": [], "plan": plan, "filtered": filtered}
+        found, filtered = retrieve(col, plan, vector, use_plan=False), False
 
     blocks, sources = [], []
     for n, a in enumerate(found, 1):
@@ -278,7 +278,10 @@ def main():
         return
 
     today = datetime.strptime(args.today, "%Y-%m-%d") if args.today else None
-    r = ask(args.question, today)
+    try:
+        r = ask(args.question, today)
+    except RuntimeError as e:
+        sys.exit(str(e))
     plan = r["plan"]
     scope = [f"{plan.date_from or '…'} → {plan.date_to or '…'}"] if plan.date_from or plan.date_to else []
     scope += plan.categories

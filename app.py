@@ -41,7 +41,10 @@ def answer(question):
     question = (question or "").strip()
     if not question:
         return "", ""
-    r = rag.ask(question)
+    try:
+        r = rag.ask(question)
+    except RuntimeError as e:
+        return f"**{e}**", ""
     urls = {s["n"]: s["url"] for s in r["sources"]}
     # [2] trong câu trả lời -> liên kết tới bài gốc
     text = re.sub(r"\[(\d+)\]", lambda m: f"[[{m[1]}]]({urls[int(m[1])]})" if int(m[1]) in urls else m[0],
@@ -70,4 +73,6 @@ if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
     if not os.environ.get("GEMINI_API_KEY"):
         sys.exit("Thiếu biến môi trường GEMINI_API_KEY")
+    if rag.get_collection().count() == 0:
+        sys.exit(rag.EMPTY_INDEX)
     demo.launch()
