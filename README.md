@@ -45,6 +45,22 @@ python ai_summary.py articles.csv comments.csv --now "2026-10-29 07:00"
 
 Đổi model mà không sửa code: đặt biến môi trường `GEMINI_MODEL`.
 
+## Hỏi đáp trên kho bài (RAG)
+
+`rag.py` cho phép hỏi bằng tiếng Việt trên toàn bộ bài đã crawl, kể cả bình luận:
+
+```bash
+pip install -r requirements-rag.txt        # thêm ChromaDB, không cần cho bản tin hằng ngày
+python rag.py index                        # lần đầu lâu (vài nghìn đoạn), các lần sau chỉ làm phần mới
+python rag.py ask "Tuần trước độc giả nói gì về giá vàng?"
+```
+
+- Mỗi bài được cắt thành vài đoạn nội dung (có tiêu đề ở đầu mỗi đoạn) cùng một document gom 20 bình luận
+  nhiều thích nhất. Embedding bằng Gemini (`gemini-embedding-001`, 768 chiều) rồi lưu vào ChromaDB ở `rag_index/`.
+- **Self-query**: trước khi tìm, Gemini đọc câu hỏi và trả về câu truy vấn cùng bộ lọc ngày / chuyên mục
+  ("tuần trước", "bóng đá"...). Vì vậy câu hỏi có mốc thời gian không bị lẫn bài cũ chỉ vì giống chữ.
+- Nội dung bài và bình luận được tìm riêng, nên câu trả lời tách được sự việc với ý kiến độc giả, có số nguồn [1], [2].
+
 ## Đưa lên GitHub
 
 1. Tạo repo mới trên GitHub, đẩy thư mục này lên nhánh `main`.

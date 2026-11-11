@@ -5,3 +5,4 @@ __pycache__/
 .env
 *.csv
 .ipynb_checkpoints/
+rag_index/

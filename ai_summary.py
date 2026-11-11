@@ -82,19 +82,24 @@ def get_client():
 
 
 def _generate(prompt, system, max_tokens, schema=None):
-    """Gọi Gemini, tự thử lại khi server quá tải (5xx) hoặc vượt giới hạn (429).
-
-    Trả về chuỗi text của model, hoặc None nếu thử RETRIES lần vẫn lỗi.
-    """
+    """Gọi Gemini, trả về chuỗi text của model, hoặc None nếu thử RETRIES lần vẫn lỗi."""
     config = {"system_instruction": system, "max_output_tokens": max_tokens}
     if schema is not None:
         config["response_mime_type"] = "application/json"
         config["response_schema"] = schema
 
+    resp = with_retry(lambda: get_client().models.generate_content(model=MODEL, contents=prompt, config=config))
+    return resp.text if resp is not None else None
+
+
+def with_retry(call):
+    """Chạy call(), tự thử lại khi server quá tải (5xx) hoặc vượt giới hạn (429).
+
+    Trả về kết quả của call(), hoặc None nếu thử RETRIES lần vẫn lỗi.
+    """
     for attempt in range(1, RETRIES + 1):
         try:
-            resp = get_client().models.generate_content(model=MODEL, contents=prompt, config=config)
-            return resp.text
+            return call()
         except errors.ServerError as e:      # 503: server Google quá tải
             wait = 10 * attempt
             print(f"    [{e.code}] server bận, thử lại lần {attempt}/{RETRIES} sau {wait}s")
