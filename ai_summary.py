@@ -106,6 +106,9 @@ def with_retry(call):
         except errors.ClientError as e:
             if e.code != 429:                # sai key, sai tên model... thử lại cũng vô ích
                 raise
+            if "PerDay" in str(e):           # hết hạn mức trong ngày: chờ vài phút cũng vô ích
+                print("    [429] API key đã hết hạn mức trong ngày")
+                return None
             wait = 30 * attempt
             print(f"    [429] vượt giới hạn, thử lại lần {attempt}/{RETRIES} sau {wait}s")
         time.sleep(wait)

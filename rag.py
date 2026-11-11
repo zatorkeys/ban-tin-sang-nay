@@ -269,7 +269,8 @@ def ask(question, today=None):
     plan = plan_query(question, today)
     vector = embed([plan.search_query], "RETRIEVAL_QUERY")
     if vector is None:
-        raise RuntimeError("Không gọi được Gemini để embedding câu hỏi, thử lại sau.")
+        raise RuntimeError("Không embedding được câu hỏi: API key đã hết hạn mức embedding trong ngày "
+                           "(làm mới lúc 0 giờ giờ Mỹ, khoảng 14-15 giờ Việt Nam) hoặc Gemini đang lỗi.")
 
     found = retrieve(col, plan, vector)
     filtered = True
