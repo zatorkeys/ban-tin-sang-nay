@@ -53,6 +53,7 @@ python ai_summary.py articles.csv comments.csv --now "2026-10-29 07:00"
 pip install -r requirements-rag.txt        # thêm ChromaDB, không cần cho bản tin hằng ngày
 python rag.py index                        # lần đầu lâu (vài nghìn đoạn), các lần sau chỉ làm phần mới
 python rag.py ask "Tuần trước độc giả nói gì về giá vàng?"
+python app.py                              # giao diện web hỏi đáp: http://127.0.0.1:7860
 ```
 
 - Mỗi bài được cắt thành vài đoạn nội dung (có tiêu đề ở đầu mỗi đoạn) cùng một document gom 20 bình luận
