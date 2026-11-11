@@ -18,19 +18,22 @@ import glob
 import gzip
 import json
 import os
+import re
 import sys
+import time
 from datetime import datetime, timedelta
 
 import chromadb
-from google.genai import types
+from google.genai import errors, types
 from pydantic import BaseModel
 
-from ai_summary import VN_TZ, _generate, get_client, with_retry
+from ai_summary import RETRIES, VN_TZ, _generate, get_client, with_retry
 from crawler import CATEGORIES
 
 EMBED_MODEL = os.environ.get("GEMINI_EMBED_MODEL", "gemini-embedding-001")
 EMBED_DIM = 768             # đủ tốt cho tìm kiếm, nhẹ hơn 4 lần so với mặc định 3072
-EMBED_BATCH = 100           # số đoạn mỗi lần gọi API
+EMBED_BATCH = 100           # số đoạn mỗi lần gọi API (tự giảm khi bị giới hạn)
+MIN_EMBED_BATCH = 5
 DATA_GLOB = os.path.join("data", "articles", "*.jsonl.gz")
 INDEX_DIR = "rag_index"
 COLLECTION = "vnexpress"
@@ -112,11 +115,21 @@ def article_docs(rec):
 # ----------------------------------------------------------------------------
 # 2. Embedding + chỉ mục
 # ----------------------------------------------------------------------------
-def embed(texts, task):
-    """task: RETRIEVAL_DOCUMENT khi lưu, RETRIEVAL_QUERY khi hỏi. Trả về None nếu API lỗi mãi."""
+def embed(texts, task, retry=True):
+    """task: RETRIEVAL_DOCUMENT khi lưu, RETRIEVAL_QUERY khi hỏi. Trả về None nếu API lỗi mãi.
+
+    retry=False: gọi một lần, lỗi thì ném ra để build_index tự xử lý (giảm cỡ lô).
+    """
     config = types.EmbedContentConfig(task_type=task, output_dimensionality=EMBED_DIM)
-    resp = with_retry(lambda: get_client().models.embed_content(model=EMBED_MODEL, contents=texts, config=config))
+    call = lambda: get_client().models.embed_content(model=EMBED_MODEL, contents=texts, config=config)
+    resp = with_retry(call) if retry else call()
     return [e.values for e in resp.embeddings] if resp is not None else None
+
+
+def _quota_name(err):
+    """Tên hạn mức bị vượt trong lỗi 429, vd. 'EmbedContentInputTokensPerModelPerMinute-FreeTier'."""
+    m = re.search(r"'quotaId': '([^']+)'|\"quotaId\": \"([^\"]+)\"", str(err))
+    return (m.group(1) or m.group(2)) if m else ""
 
 
 def get_collection():
@@ -135,15 +148,32 @@ def build_index():
     print(f"{len(docs)} document từ {len({d[2]['article_id'] for d in docs})} bài; "
           f"đã có {len(seen)}, cần embedding {len(todo)}")
 
-    for start in range(0, len(todo), EMBED_BATCH):
-        batch = todo[start:start + EMBED_BATCH]
-        vectors = embed([d[1] for d in batch], "RETRIEVAL_DOCUMENT")
-        if vectors is None:
-            sys.exit("Gemini lỗi liên tục, dừng lại. Phần đã xong vẫn được giữ, chạy lại để làm tiếp.")
+    # gói miễn phí giới hạn token mỗi phút: gặp 429 thì chia đôi lô và chờ hết phút, đến khi lọt
+    size, start, fails = EMBED_BATCH, 0, 0
+    while start < len(todo):
+        batch = todo[start:start + size]
+        try:
+            vectors = embed([d[1] for d in batch], "RETRIEVAL_DOCUMENT", retry=False)
+        except errors.APIError as e:
+            if e.code != 429 and not 500 <= e.code < 600:
+                raise
+            quota = _quota_name(e)
+            if "PerDay" in quota:
+                sys.exit(f"Hết hạn mức trong ngày ({quota}). Phần đã xong vẫn được giữ, mai chạy lại để làm tiếp.")
+            fails += 1
+            if fails > RETRIES:
+                sys.exit(f"Gemini lỗi liên tục ({e.code} {quota}). Phần đã xong vẫn được giữ, chạy lại để làm tiếp.")
+            if e.code == 429:
+                size = max(MIN_EMBED_BATCH, size // 2)
+            print(f"    [{e.code}] {quota or e.status}: lô còn {size} đoạn, chờ 60s")
+            time.sleep(60)
+            continue
+        fails = 0
         # ghi từng lô: ngắt giữa chừng thì lần sau làm tiếp, không mất công
         col.upsert(ids=[d[0] for d in batch], documents=[d[1] for d in batch],
                    metadatas=[d[2] for d in batch], embeddings=vectors)
-        print(f"  {min(start + EMBED_BATCH, len(todo))}/{len(todo)}")
+        start += len(batch)
+        print(f"  {start}/{len(todo)}")
     print(f"Chỉ mục có {col.count()} document ({INDEX_DIR}/)")
 
 
